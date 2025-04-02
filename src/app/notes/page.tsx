@@ -25,6 +25,18 @@ type Note = {
 
 type SortOption = 'updated' | 'title';
 
+// Placeholder functions for Threads login and posting
+const loginToThreads = async () => {
+  // Implement Threads login logic here
+  console.log('Logging into Threads...');
+  return true; // Simulate successful login
+};
+
+const postToThreads = async (selectedNotes: Note[]) => {
+  // Implement posting logic here
+  console.log('Posting to Threads:', selectedNotes);
+};
+
 export default function NotesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -35,6 +47,8 @@ export default function NotesPage() {
   const [sortBy, setSortBy] = useState<SortOption>('updated');
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [isLoggedInToThreads, setIsLoggedInToThreads] = useState(false);
+  const [isLoggedInToFacebook, setIsLoggedInToFacebook] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -62,6 +76,26 @@ export default function NotesPage() {
       fetchNotes();
     }
   }, [status]);
+
+  useEffect(() => {
+    const checkThreadsLogin = async () => {
+      if (status === 'authenticated') {
+        try {
+          const response = await fetch(`/api/threads/token?user_id=${session?.user?.id}`);
+          if (response.ok) {
+            const { accessToken } = await response.json();
+            if (accessToken) {
+              setIsLoggedInToThreads(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking Threads login:', error);
+        }
+      }
+    };
+
+    checkThreadsLogin();
+  }, [status, session]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this note?')) {
@@ -135,12 +169,47 @@ export default function NotesPage() {
     return aTitle.localeCompare(bTitle);
   });
 
+  const handleThreadsLogin = async () => {
+    const success = await loginToThreads();
+    if (success) {
+      setIsLoggedInToThreads(true);
+    }
+  };
+
+  const handlePostToThreads = async () => {
+    const notesToPost = notes.filter(note => selectedNotes.has(note.id));
+    try {
+      const response = await fetch('/api/threads/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes: notesToPost }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post to Threads');
+      }
+
+      // Handle success
+      console.log('Successfully posted to Threads');
+    } catch (error) {
+      console.error('Error posting to Threads:', error);
+      setError('Failed to post to Threads');
+    }
+  };
+
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
+  }
+
+  function handlePostToFacebook(event: React.MouseEvent<HTMLButtonElement>): void {
+    // Implement the function logic here
+    console.log('Posting to Facebook...');
   }
 
   return (
@@ -241,6 +310,47 @@ export default function NotesPage() {
                 </div>
               )}
             </div>
+            {!isLoggedInToThreads ? (
+              <button
+                onClick={() => {
+                  const userId = session?.user?.id;
+                  if (userId) {
+                    window.location.href = `/api/auth/threads?user_id=${userId}`;
+                  }
+                }}
+                className="px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-full transition-colors duration-200"
+              >
+                Login to Threads
+              </button>
+            ) : (
+              <button
+                onClick={handlePostToThreads}
+                disabled={selectedNotes.size === 0}
+                className={`px-3 py-2 text-sm font-medium text-white rounded-full transition-colors duration-200 ${
+                  selectedNotes.size > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Post to Threads
+              </button>
+            )}
+            {!isLoggedInToFacebook ? (
+              <button
+                onClick={() => window.location.href = '/api/auth/facebook'}
+                className="px-3 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-full transition-colors duration-200"
+              >
+                Login to Facebook
+              </button>
+            ) : (
+              <button
+                onClick={handlePostToFacebook}
+                disabled={selectedNotes.size === 0}
+                className={`px-3 py-2 text-sm font-medium text-white rounded-full transition-colors duration-200 ${
+                  selectedNotes.size > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                Post to Facebook
+              </button>
+            )}
           </div>
           {selectedNotes.size > 0 && (
             <div className="flex items-center space-x-4">
