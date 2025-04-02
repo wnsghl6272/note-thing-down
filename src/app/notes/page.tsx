@@ -120,6 +120,10 @@ export default function NotesPage() {
     }
   };
 
+  const handlePostToTwitter = async () => {
+    // Implementation of handlePostToTwitter function
+  };
+
   const sortedNotes = [...notes].sort((a, b) => {
     if (sortBy === 'updated') {
       return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
@@ -151,7 +155,7 @@ export default function NotesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">
-                Note Thing Down
+                Note Things Down
               </h1>
             </div>
             <div className="flex items-center space-x-6">
@@ -178,6 +182,19 @@ export default function NotesPage() {
                   className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-full transition-all duration-200 shadow-md hover:shadow-lg"
                 >
                   Logout
+                </button>
+              </div>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => {
+                    if (selectedNotes.size > 0) {
+                      window.location.href = '/api/twitter-auth';
+                    }
+                  }}
+                  disabled={selectedNotes.size === 0}
+                  className={`inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 rounded-full transition-all duration-200 shadow-md hover:shadow-lg ${selectedNotes.size === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Post to Twitter
                 </button>
               </div>
             </div>
